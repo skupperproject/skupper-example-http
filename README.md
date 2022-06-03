@@ -1,8 +1,8 @@
-# Accessing SERVER using Skupper
+# Accessing an HTTP server using Skupper
 
-[![main](https://github.com/skupperproject/skupper-example-template/actions/workflows/main.yaml/badge.svg)](https://github.com/skupperproject/skupper-example-template/actions/workflows/main.yaml)
+[![main](https://github.com/skupperproject/skupper-example-http/actions/workflows/main.yaml/badge.svg)](https://github.com/skupperproject/skupper-example-http/actions/workflows/main.yaml)
 
-#### Use public cloud resources to process data from a private SERVER
+#### Securely connect to an HTTP server on a remote Kubernetes cluster
 
 
 This example is part of a [suite of examples][examples] showing the
@@ -23,15 +23,15 @@ across cloud providers, data centers, and edge sites.
 * [Step 4: Install Skupper in your namespaces](#step-4-install-skupper-in-your-namespaces)
 * [Step 5: Check the status of your namespaces](#step-5-check-the-status-of-your-namespaces)
 * [Step 6: Link your namespaces](#step-6-link-your-namespaces)
-* [Step 7: Deploy SERVER](#step-7-deploy-server)
-* [Step 8: Expose SERVER](#step-8-expose-server)
-* [Step 9: Run CLIENT](#step-9-run-client)
+* [Step 7: Deploy the HTTP server](#step-7-deploy-the-http-server)
+* [Step 8: Expose the HTTP server](#step-8-expose-the-http-server)
+* [Step 9: Run the HTTP client](#step-9-run-the-http-client)
 * [Accessing the web console](#accessing-the-web-console)
 * [Cleaning up](#cleaning-up)
 
 ## Overview
 
-This example shows how you can use Skupper to access SERVER.
+This example shows how you can use Skupper to access an HTTP server.
 
 ## Prerequisites
 
@@ -265,7 +265,7 @@ to use `sftp` or a similar tool to transfer the token securely.
 By default, tokens expire after a single use or 15 minutes after
 creation.
 
-## Step 7: Deploy SERVER
+## Step 7: Deploy the HTTP server
 
 In the private namespace, use the `kubectl apply` command to
 install the server.
@@ -273,67 +273,68 @@ install the server.
 _**Console for private:**_
 
 ~~~ shell
-kubectl apply -f server/kubernetes.yaml
+kubectl apply -f http-server/kubernetes.yaml
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ kubectl apply -f server/kubernetes.yaml
-deployment.apps/server created
+$ kubectl apply -f http-server/kubernetes.yaml
+deployment.apps/http-server created
 ~~~
 
-## Step 8: Expose SERVER
+## Step 8: Expose the HTTP server
 
-In the private namespace, use `skupper expose` to expose SERVER
-on the Skupper network.
+In the private namespace, use `skupper expose` to expose the
+HTTP server on the Skupper network.
 
-Then, in the public namespace, use `kubectl get service/server`
-to check that the service appears after a moment.
+Then, in the public namespace, use `kubectl get
+service/http-server` to check that the `http-server` service
+appears after a moment.
 
 _**Console for private:**_
 
 ~~~ shell
-skupper expose deployment/server --port 8080 --target-port 80
+skupper expose deployment/http-server --port 8080 --target-port 80
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ skupper expose deployment/server --port 8080 --target-port 80
-deployment server exposed as server
+$ skupper expose deployment/http-server --port 8080 --target-port 80
+deployment http-server exposed as http-server
 ~~~
 
 _**Console for public:**_
 
 ~~~ shell
-kubectl get service/server
+kubectl get service/http-server
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ kubectl get service/server
-NAME     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
-server   ClusterIP   10.100.58.95   <none>        8080/TCP   2s
+$ kubectl get service/http-server
+NAME          TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+http-server   ClusterIP   10.100.58.95   <none>        8080/TCP   2s
 ~~~
 
-## Step 9: Run CLIENT
+## Step 9: Run the HTTP client
 
-In the public namespace, use `kubectl run` to run CLIENT.
+In the public namespace, use `kubectl run` to run the HTTP client.
 
 _**Console for public:**_
 
 ~~~ shell
-kubectl run client --attach --rm --image docker.io/library/nginx --restart Never -- curl -sf http://server:8080/
+kubectl run http-client --attach --rm --image docker.io/library/nginx --restart Never -- curl -sf http://http-server:8080/
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ kubectl run client --attach --rm --image docker.io/library/nginx --restart Never -- curl -sf http://server:8080/
+$ kubectl run http-client --attach --rm --image docker.io/library/nginx --restart Never -- curl -sf http://http-server:8080/
 OUTPUT
-pod "client" deleted
+pod "http-client" deleted
 ~~~
 
 ## Accessing the web console
@@ -379,7 +380,7 @@ _**Console for private:**_
 
 ~~~ shell
 skupper delete
-kubectl delete -f server/kubernetes.yaml
+kubectl delete -f http-server/kubernetes.yaml
 ~~~
 
 _**Console for public:**_
