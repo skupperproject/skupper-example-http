@@ -1,23 +1,24 @@
 title: Accessing an HTTP server using Skupper
 subtitle: Securely connect to an HTTP server on a remote Kubernetes cluster
-github_actions_url: https://github.com/skupperproject/skupper-example-http/actions/workflows/main.yaml
 overview: |
   This example shows how you can use Skupper to connect an HTTP client
   on one Kubernetes cluster to an HTTP server on another.
 sites:
   public:
-    kubeconfig: ~/.kube/config-public
+    title: Public
+    platform: kubernetes
     namespace: public
+    env:
+      KUBECONFIG: ~/.kube/config-public
   private:
-    kubeconfig: ~/.kube/config-private
+    title: Private
+    platform: kubernetes
     namespace: private
+    env:
+      KUBECONFIG: ~/.kube/config-private
 steps:
-  - standard: configure_separate_console_sessions
-  - standard: access_your_clusters
-  - standard: set_up_your_namespaces
-  - standard: install_skupper_in_your_namespaces
-  - standard: check_the_status_of_your_namespaces
-  - standard: link_your_namespaces
+  - standard: install_the_skupper_command_line_tool
+  - standard: kubernetes/set_up_your_namespaces
   - title: Deploy the HTTP server
     preamble: |
       In the private namespace, use the `kubectl apply` command to
@@ -26,6 +27,8 @@ steps:
       private:
         - run: kubectl apply -f http-server/kubernetes.yaml
           output: deployment.apps/http-server created
+  - standard: kubernetes/create_your_sites
+  - standard: kubernetes/link_your_sites
   - title: Expose the HTTP server
     preamble: |
       In the private namespace, use `skupper expose` to expose the
@@ -36,11 +39,11 @@ steps:
       appears after a moment.
     commands:
       private:
-        - await: deployment/http-server
+        - await_resource: deployment/http-server
         - run: skupper expose deployment/http-server --port 8080 --target-port 80
           output: deployment http-server exposed as http-server
       public:
-        - await: service/http-server
+        - await_resource: service/http-server
         - run: kubectl get service/http-server
           output: |
             NAME          TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
@@ -50,7 +53,7 @@ steps:
       In the public namespace, use `kubectl run` to run the HTTP client.
     commands:
       public:
-        - await: service/http-server
+        - await_resource: service/http-server
         - run: kubectl run http-client --attach --rm --image docker.io/library/nginx --restart Never -- curl -sf http://http-server:8080/
           output: |
             <!DOCTYPE html>
@@ -77,7 +80,6 @@ steps:
             </body>
             </html>
             pod "http-client" deleted
-  - standard: accessing_the_web_console
   - standard: cleaning_up
     commands:
       private:
